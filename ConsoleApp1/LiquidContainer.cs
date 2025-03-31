@@ -2,33 +2,36 @@
 
 public class LiquidContainer : Container, IHazardNotifier
 {
-    private bool _isCargoDangerous;
-    public LiquidContainer(int height, int depth, int maxLoad, int containerMass,bool isCargoDangerous ) : base(height, depth, containerMass, maxLoad)
+    public LiquidContainer(int height, int depth, int maxLoad, int containerMass ) : base(height, depth, containerMass, maxLoad)
     {
-        this._isCargoDangerous = isCargoDangerous;
         SerialNumber = $"KON-L{CurrentCodeNumber++}"  ;
     }
 
-    private void Notify()
+    private void Notify(string msg)
     {
         Console.WriteLine(
-            $"Dangerous operation with container: {SerialNumber}") ;
+            $@"Dangerous operation with container: {SerialNumber}
+                {msg}") ;
     }
 
     public override void LoadContainer(double load)
     {
-            if (_isCargoDangerous &&  ContainerWeight + load > ContainerMaxLoad / 2)
-            {
-                Notify();
-            }
-            else if (!_isCargoDangerous && ContainerWeight + load > ContainerWeight * 0.9)
-            {
-                Notify();
-            }
-            else
-            {
-                base.LoadContainer(load);
-            }
+        double tmp = ContainerWeight + load;
+        
+        if (tmp > ContainerMaxLoad)
+        {
+            throw new OverfillException("Cargo mass exceeds container max load");
+        }
+
+        base.LoadContainer(load);
+        if (tmp > ContainerMaxLoad * 0.9)
+        {
+            Notify("Max capacity for normal cargo exceeded");
+        }
+        else if (tmp > ContainerMaxLoad / 2)
+        {
+            Notify("Max capacity for dangerous cargo exceeded");
+        }
     }
     
 }

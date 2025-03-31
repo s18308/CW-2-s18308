@@ -2,11 +2,11 @@
 
 public class CoolingContainer : Container, IHazardNotifier
 {
-    private static int _containerAmount;
     private string? _productType;
-    private double _temp;
-    private static readonly Dictionary<string, double> _minimalTemp = 
-        new Dictionary<string, double>{ 
+    private double? _temperature {get; set;} = default;
+    private static readonly Dictionary<string, double> _cargoTypeAndTemperMinimalTemperature = 
+        new() 
+        { 
             {"bananas", 13.3},
             {"chocolate", 18},
             {"fish", 2},
@@ -19,12 +19,11 @@ public class CoolingContainer : Container, IHazardNotifier
             {"eggs", 19}
         };
 
-    public CoolingContainer(int height, int depth, int weight, int maxLoad, string? productType) : base(height, depth, weight, maxLoad)
+    public CoolingContainer(int height, int depth, int weight, int maxLoad) : base(height, depth, weight, maxLoad)
     {
         _productType = null;
+        _temperature = null;
         SerialNumber = $"KON-C{CurrentCodeNumber++}";
-        
-
     }
     private void Notify(string? message)
     {
@@ -32,31 +31,30 @@ public class CoolingContainer : Container, IHazardNotifier
             $@"Dangerous operation with container: {SerialNumber}
                 {message}") ;
     }
-    
+
     public void LoadContainer(double mass, string type)
     {
-        if(_productType != null && _productType == type)
+        if (_productType == type)
         {
-            try
+            if (CargoMass + mass > ContainerMaxLoad)
             {
-                if (_minimalTemp[type] < _temp)
-                {
-                    Notify("Container temperature too high.");
-                    return;
-                }
-
-                _productType = type;
-                base.LoadContainer(mass);
+                throw new OverfillException("Cargo mass exceeds container max load");
             }
-            catch (Exception e)
-            {
-                
-            }
+            CargoMass += mass;
         }
-        else
+        else if (_productType != null)
         {
-            Notify("Incorrect cargo ");
+            Notify("Cargo incorrect type");
+        }
+        else if (_productType == null && _cargoTypeAndTemperMinimalTemperature.ContainsKey(type))
+        {
+            if (CargoMass + mass > ContainerMaxLoad)
+            {
+                throw new OverfillException("Cargo mass exceeds container max load");
+            }
+            _productType = type;
+            _temperature = _cargoTypeAndTemperMinimalTemperature[type];
+            CargoMass += mass;
         }
     }
-
 }
